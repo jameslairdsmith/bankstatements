@@ -1,0 +1,51 @@
+---
+title: "R Notebook"
+output: NA
+---
+
+```{r}
+devtools::load_all()
+```
+
+```{r}
+list_statements()
+```
+
+```{r}
+my_transaction_data <- get_statement_data()
+
+my_transaction_data
+```
+
+```{r}
+my_transaction_data %>% 
+	count(trans_desc, sort = T) %>% 
+	filter(str_detect(trans_desc, "uber"))
+```
+
+
+
+```{r}
+my_transaction_data %>% 
+	mutate(trans_desc = tolower(trans_desc)) %>% 
+	mutate(is_tfl = str_detect(trans_desc, "tfl")) %>% 
+	mutate(is_train = str_detect(trans_desc, "train")) %>% 
+	mutate(is_taxi = str_detect(trans_desc, "uber|taxi")) %>% 
+	# mutate(is_taxi = str_detect(trans_desc, "taxi")) %>% 
+	mutate(is_travel = is_tfl | is_train | is_taxi) %>% 
+	filter(is_travel) %>% 
+	mutate(simple_desc = case_when(
+		is_tfl ~ "TFL",
+		is_train ~ "Train",
+		is_taxi ~ "Taxi",
+		TRUE ~ "Other"
+	)) %>% 
+	mutate(trans_week = lubridate::floor_date(trans_date, "month")) %>% 
+	group_by(simple_desc, trans_week) %>% 
+	summarise(sum_expenses = sum(expense, na.rm = T)) %>% 
+	ggplot(aes(x = trans_week, y = sum_expenses, fill = simple_desc)) +
+	ggplot2::geom_col()
+```
+
+
+
